@@ -20,10 +20,27 @@ def checkPassword(password: str):
     elif (len(password) >= 6 and ((haveLetters and haveNumbers) or (haveLetters and haveSpecials))):
         return "Medium"
     else:
-        return f"*Unexpected password case encountered. ({haveLetters}|{haveNumbers}|{haveSpecials})"
+        return f"*Unexpected password case encountered. (L:{haveLetters}|N:{haveNumbers}|S:{haveSpecials})"
     
-inputPassword = input("Enter your password: ").strip()
+inputPasswords = {}
+count = 0
 
-result = checkPassword(inputPassword)
+while True:
+    count += 1
 
-print(f"The strength for the password - '{inputPassword}' - is: {result}")
+    password = input(f"#{count}: Enter your password (Enter -1 to stop): ").strip()
+
+    if (password == "-1"):
+        break
+
+    result = checkPassword(password)
+
+    inputPasswords[password] = result
+
+print("=================================")
+print(f"Result: {"" if len(inputPasswords) > 0 else "*Empty password list detected*"}")
+
+for password, result in inputPasswords.items():
+    print(f"The password - '{password}' - is: {result}")
+
+print("=================================")
