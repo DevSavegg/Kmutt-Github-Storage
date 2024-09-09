@@ -43,7 +43,7 @@ int main() {
     int integer_cache = 0, decimal_cache = 0;
 
     size_t integer_count = 0, decimal_count = 0;
-    wchar_t suffixCache[10], numberCache[10];
+    wchar_t suffixCache[10], numberCache[99];
 
     // Set the locale to support UTF-8
     setlocale(LC_ALL, "");
@@ -80,10 +80,20 @@ int main() {
     for (i = 0; i < integer_count; i++) {
         integer_cache = integer[i] - 48;
 
-        wcscpy(suffixCache, bahtSuffix[integer_count - i - 1]);
+        if (integer_cache == 0 && i != 0) {
+            continue;
+        }
+
+        if (integer_count - i - 1 > 7) {
+            wcscpy(suffixCache, bahtSuffix[integer_count - 7 - i]);
+        } else {
+            wcscpy(suffixCache, bahtSuffix[integer_count - i - 1]);
+        }
 
         if (integer_count - i - 1 == 1 && integer_cache == 2) {
             wcscpy(numberCache, uniqueWords[0]);
+        } else if (integer_count - i - 1 == 1 && integer_cache == 1) {
+            wcscpy(numberCache, L"");
         } else if (integer_count - i - 1 == 0 && integer_cache == 1) {
             wcscpy(numberCache, uniqueWords[1]);
         } else if (integer_count - i - 1 == 0 && integer_cache == 0) {
