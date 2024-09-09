@@ -6,7 +6,33 @@
 #include <wchar.h>
 #include <locale.h>
 
+void removeLeadingZeros(char* str) {
+    int i = 0, j = 0;
+
+    // Find the first non-zero character
+    while (str[i] == '0') {
+        i++;
+    }
+
+    // Shift the remaining characters to the left
+    while (str[i] != '\0') {
+        str[j++] = str[i++];
+    }
+    
+    // Null terminate the resulting string
+    str[j] = '\0';
+
+    // If the string was full of zeros (e.g., "0000"), we set it to "0"
+    if (j == 0) {
+        str[0] = '0';
+        str[1] = '\0';
+    }
+}
+
 int main() {
+    // Set the locale to support UTF-8
+    setlocale(LC_ALL, "");
+
     // Currency Constant
     const wchar_t bahtSuffix[7][10] = {
         L"",
@@ -34,100 +60,108 @@ int main() {
         L"เอ็ด"
     };
 
+    //----------------------------------------//
+    
     // Input Variables
-    char input[100];
-    char integer[50], decimal[50];
+    char inputNumber[200];
 
-    // Other Variables
-    int i, j, dot_position = -1, decimal_shift = 0;
-    int integer_cache = 0, decimal_cache = 0;
+    // Seperated Variables
+    char *rawIntegerNumber, *rawFloatNumber;
 
-    size_t integer_count = 0, decimal_count = 0;
-    wchar_t suffixCache[10], numberCache[99];
+    // Counting/Checking Variables
+    int i, j, n;
+    int aboveMillion, repeatMillion;
 
-    // Set the locale to support UTF-8
-    setlocale(LC_ALL, "");
+    // Cache Variables
+    int tempInteger;
+    float tempFloat;
 
-    // Accept the input
-    printf("Enter number : ");
-    scanf("%s", input);
+    int integerRange, floatRange;
+    int suffixPosition;
 
-    // Find decimal point position
-    for (i = 0; i < strlen(input); i++) {
-        if (input[i] == '.') {
-            dot_position = i;
-            break;
-        }
-    }
+    wchar_t tempSuffix[10], tempNumber[10];
 
-    // If decimal number exist, separate them
-    if (dot_position != -1) {
-        strncpy(integer, input, dot_position);
-        integer[dot_position] = '\0';
+    //----------------------------------------//
 
-        strncpy(decimal, input + dot_position + 1, 2);
-        decimal[2] = '\0';
+    // Accept Input
+    printf("Input the number (200 characters limit): ");
+    scanf("%s", &inputNumber);
+
+    //----------------------------------------//
+
+    // If both integer and float exist
+    if (strchr(inputNumber, '.') != NULL) {
+        // Seperate integer from float
+        rawIntegerNumber = strtok(inputNumber, ".");
+        rawFloatNumber = strtok(NULL, ".");
     } else {
-        strncpy(integer, input, sizeof(integer));
-        integer[strlen(input) + 1] = '\0';
+        // If not the manually set integer number
+        rawIntegerNumber = inputNumber;
     }
 
-    // Get Integer and Decimal length
-    integer_count = strlen(integer);
-    decimal_count = strlen(decimal);
+    //----------------------------------------//
 
-    // Print full integer number
-    for (i = 0; i < integer_count; i++) {
-        integer_cache = integer[i] - 48;
+    // If interger exists
+    if (rawIntegerNumber != NULL) {
+        // Reset variable's value
+        tempInteger = 0;
+        aboveMillion = 0;
+        n = 0;
 
-        if (integer_cache == 0 && i != 0) {
-            continue;
-        }
+        // Remove leading zeros from integer (If exist. E.g., 00412)
+        removeLeadingZeros(rawIntegerNumber);
 
-        if (integer_count - i - 1 > 7) {
-            wcscpy(suffixCache, bahtSuffix[integer_count - 7 - i]);
-        } else {
-            wcscpy(suffixCache, bahtSuffix[integer_count - i - 1]);
-        }
+        // Find range for integer
+        integerRange = strlen(rawIntegerNumber);
 
-        if (integer_count - i - 1 == 1 && integer_cache == 2) {
-            wcscpy(numberCache, uniqueWords[0]);
-        } else if (integer_count - i - 1 == 1 && integer_cache == 1) {
-            wcscpy(numberCache, L"");
-        } else if (integer_count - i - 1 == 0 && integer_cache == 1) {
-            wcscpy(numberCache, uniqueWords[1]);
-        } else if (integer_count - i - 1 == 0 && integer_cache == 0) {
-            wcscpy(numberCache, L"");
-        } else {
-            wcscpy(numberCache, thaiNumber[integer_cache]);
-        }
+        repeatMillion = integerRange / 7;
 
-        wprintf(L"%ls%ls", numberCache, suffixCache);
-    }
-    wprintf(L"บาท");
+        // For-Loop print through every number and its suffix
+        for (i = 0; i < integerRange; i++) {
+            tempInteger = (int)rawIntegerNumber[i] - 48;
 
-    // Print decimal number
-    if (dot_position == -1) {
-        wprintf(L"ถ้วน");
-    } else {
-        for (i = 0; i < decimal_count; i++) {
-            decimal_cache = decimal[i] - 48;
-
-            wcscpy(suffixCache, bahtSuffix[decimal_count - i - 1]);
-
-            if (decimal_count - i - 1 == 1 && decimal_cache == 2) {
-                wcscpy(numberCache, uniqueWords[0]);
-            } else if (decimal_count - i - 1 == 0 && decimal_cache == 1) {
-                wcscpy(numberCache, uniqueWords[1]);
-            } else if (decimal_count - i - 1 == 0 && decimal_cache == 0) {
-                wcscpy(numberCache, L"");
+            // Check if the number is above million
+            if (integerRange - i > 7) {
+                aboveMillion = 1;
             } else {
-                wcscpy(numberCache, thaiNumber[decimal_cache]);
+                aboveMillion = 0;
             }
 
-            wprintf(L"%ls%ls", numberCache, suffixCache);
+            // Debug
+            //printf("\n\n--%c %d--\n\n", rawIntegerNumber[i], i);
+
+            // Copy suffix
+            suffixPosition = (integerRange - (i + 1)) % 7;
+            if (tempInteger != 0) { // Check if the number is not 0
+                if (aboveMillion == 1) { // Check if the number is above million then shift suffix order by 1
+                    wcscpy(tempSuffix, bahtSuffix[suffixPosition + 1]);
+                } else {
+                    wcscpy(tempSuffix, bahtSuffix[suffixPosition]);
+                }
+            } else {
+                wcscpy(tempSuffix, L"");
+            }
+
+            // Copy number
+            if (tempInteger == 0 && integerRange != 0) {
+                wcscpy(tempNumber, L"");
+            } else if (suffixPosition == 0 && tempInteger == 1 && integerRange != 1 && aboveMillion != 1) { // E.g., 21, 111, 41021 (end with 1)
+                wcscpy(tempNumber, uniqueWords[1]);
+            } else if (suffixPosition == 0 && tempInteger == 0) { // E.g., 50, 120, 5910 (end with 0)
+                wcscpy(tempNumber, L"");
+            } else if ((suffixPosition || aboveMillion == 1) == 1 && tempInteger == 2) { // E.g., 20, 520, 10420 (2nd position is 2)
+                wcscpy(tempNumber, uniqueWords[0]);
+            } else if ((suffixPosition == 1 || aboveMillion == 1) && tempInteger == 1) {// E.g., 10, 210, 18310 (2nd position is 1)
+                wcscpy(tempNumber, L"");
+            } else {
+                wcscpy(tempNumber, thaiNumber[tempInteger]);
+            }
+
+            if (i % 7 == 0 && i != 0) {
+                printf("-%d-", i);
+                wprintf(L"ล้าน");
+            }
         }
-        wprintf(L"สตางค์");
     }
 
     return 0;
