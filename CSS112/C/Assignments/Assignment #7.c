@@ -109,7 +109,7 @@ int main() {
         n = 0;
 
         // Remove leading zeros from integer (If exist. E.g., 00412)
-        removeLeadingZeros(rawIntegerNumber);
+        //removeLeadingZeros(rawIntegerNumber);
 
         // Find range for integer
         integerRange = strlen(rawIntegerNumber);
@@ -120,46 +120,44 @@ int main() {
         for (i = 0; i < integerRange; i++) {
             tempInteger = (int)rawIntegerNumber[i] - 48;
 
-            // Check if the number is above million
-            if (integerRange - i > 7) {
-                aboveMillion = 1;
-            } else {
-                aboveMillion = 0;
-            }
-
-            // Debug
-            //printf("\n\n--%c %d--\n\n", rawIntegerNumber[i], i);
-
-            // Copy suffix
-            suffixPosition = (integerRange - (i + 1)) % 7;
-            if (tempInteger != 0) { // Check if the number is not 0
-                if (aboveMillion == 1) { // Check if the number is above million then shift suffix order by 1
-                    wcscpy(tempSuffix, bahtSuffix[suffixPosition + 1]);
+            if (tempInteger != 0) {
+                // Check if the number is above million
+                if (integerRange - i > 7) {
+                    aboveMillion = 1;
                 } else {
-                    wcscpy(tempSuffix, bahtSuffix[suffixPosition]);
+                    aboveMillion = 0;
                 }
-            } else {
-                wcscpy(tempSuffix, L"");
-            }
 
-            // Copy number
-            if (tempInteger == 0 && integerRange != 0) {
-                wcscpy(tempNumber, L"");
-            } else if (suffixPosition == 0 && tempInteger == 1 && integerRange != 1 && aboveMillion != 1) { // E.g., 21, 111, 41021 (end with 1)
-                wcscpy(tempNumber, uniqueWords[1]);
-            } else if (suffixPosition == 0 && tempInteger == 0) { // E.g., 50, 120, 5910 (end with 0)
-                wcscpy(tempNumber, L"");
-            } else if ((suffixPosition || aboveMillion == 1) == 1 && tempInteger == 2) { // E.g., 20, 520, 10420 (2nd position is 2)
-                wcscpy(tempNumber, uniqueWords[0]);
-            } else if ((suffixPosition == 1 || aboveMillion == 1) && tempInteger == 1) {// E.g., 10, 210, 18310 (2nd position is 1)
-                wcscpy(tempNumber, L"");
-            } else {
-                wcscpy(tempNumber, thaiNumber[tempInteger]);
-            }
+                // Debug
+                //printf("\n\n--%c %d--\n\n", rawIntegerNumber[i], i);
 
-            if (i % 7 == 0 && i != 0) {
-                printf("-%d-", i);
-                wprintf(L"ล้าน");
+                // Copy suffix
+                if (aboveMillion == 1) {
+                    suffixPosition = (integerRange - (i)) % 7;
+                } else {
+                    suffixPosition = (integerRange - (i + 1)) % 7;
+                }
+                wcscpy(tempSuffix, bahtSuffix[suffixPosition]);
+
+                // Copy number
+                if (suffixPosition == 0 && tempInteger == 1 && integerRange != 1 && aboveMillion != 1) { // E.g., 21, 111, 41021 (end with 1)
+                    wcscpy(tempNumber, uniqueWords[1]);
+                } else if (suffixPosition == 0 && tempInteger == 0) { // E.g., 50, 120, 5910 (end with 0)
+                    wcscpy(tempNumber, L"");
+                } else if ((suffixPosition) == 1 && tempInteger == 2) { // E.g., 20, 520, 10420 (2nd position is 2)
+                    wcscpy(tempNumber, uniqueWords[0]);
+                } else if ((suffixPosition == 1) && tempInteger == 1) {// E.g., 10, 210, 18310 (2nd position is 1)
+                    wcscpy(tempNumber, L"");
+                } else {
+                    wcscpy(tempNumber, thaiNumber[tempInteger]);
+                }
+
+                wprintf(L"%ls%ls", tempNumber, tempSuffix);
+
+                if (i % 7 == 0 && integerRange > 7 && (int)rawIntegerNumber[i + 1] - 48 == 0) {
+                    //printf("-%d-", i);
+                    wprintf(L"ล้าน");
+                }
             }
         }
     }
