@@ -47,7 +47,8 @@ for i in range(START_NUMBER, END_NUMBER + 1):
     if sum == i:
         result[i] = tmp_array
 
-print(int(math.sqrt(6)) + 1)
+# print(int(math.sqrt(6)) + 1)
 
 for integer, divisors in result.items():
+    divisors.sort()
     print(f"{integer} is a perfect number. Divisors: {divisors}")
