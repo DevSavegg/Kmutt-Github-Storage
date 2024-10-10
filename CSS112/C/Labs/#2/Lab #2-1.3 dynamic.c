@@ -1,10 +1,26 @@
 #include <stdio.h>
 #include <math.h>
+#include "tinyexpr.h"
 
 //////////////// FUNCTION f(x) ///////////////////
+// We'll use a global expression string that the user can input
+const char *expr_str;
+
+// Function wrapper for tinyexpr
 float f(float x) {
-    return expf(powf(x, 2));
+    te_variable vars[] = {{"x", &x}};
+    te_expr *expr = te_compile(expr_str, vars, 1, 0);
+
+    if (!expr) {
+        printf("Error: Invalid expression\n");
+        return 0;
+    }
+
+    float result = te_eval(expr);
+    te_free(expr);
+    return result;
 }
+
 //////////////////////////////////////////////////
 
 float tri_integrate(float a, float b, int n) {
@@ -41,6 +57,12 @@ int main() {
     float a, b;
     int n;
     float result1, result2;
+    char expression[100];
+
+    // Get the user-defined mathematical expression
+    printf("Enter a mathematical expression in terms of x (e.g., x*x, sin(x), etc.): ");
+    scanf("%s", expression);
+    expr_str = expression;  // Store the expression string globally
 
     printf("Enter a,b : ");
     scanf("%f,%f", &a, &b);
@@ -52,8 +74,8 @@ int main() {
     result2 = simp_integrate(a, b, n);
 
     printf("======================\n");
-    printf("Trapezoid : %.8f\n", result1);
-    printf("Simpson   : %.8f\n", result2);
+    printf("Trapezoid : %.6f\n", result1);
+    printf("Simpson   : %.6f\n", result2);
     printf("======================\n");
 
     return 0;
