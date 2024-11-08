@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <wchar.h>
 #include <locale.h>
@@ -23,8 +24,26 @@ int main() {
     printCard(1, (int[]){2}, (char[]){'X'});
 }
 
+
+
+
+
+
+
+//          Functions           //
+
+
+
+
+
+
+
 void clearScreen() {
-    printf("\033[H\033[J");
+    #ifdef _WIN32
+        system("cls");  // Windows command
+    #else
+        system("clear");  // Unix-based systems command
+    #endif
 }
 
 void printTitle() {
@@ -62,7 +81,7 @@ void printCard(int numberAmount, int* number, char* face) {
         if (face[i] == 'X') {
             printf("│X            │    ");
         } else if (number[i] > 1 && number[i] < 11) {
-            printf("│%2d           │    ", number[i]);
+            printf("│%-2d           │    ", number[i]);
         } else {
             char num[2];
             solveCardNumber(num, number[i]);
@@ -104,7 +123,7 @@ void printCard(int numberAmount, int* number, char* face) {
         if (face[i] == 'X') {
             printf("│            X│    ");
         } else if (number[i] > 1 && number[i] < 11) {
-            printf("│           %-2d│    ", number[i]);
+            printf("│           %2d│    ", number[i]);
         } else {
             char num[2];
             solveCardNumber(num, number[i]);
