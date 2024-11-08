@@ -1,3 +1,5 @@
+////////   Libraries   ////////
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -5,17 +7,54 @@
 #include <locale.h>
 #include <string.h>
 
+////////   Declare Functions   ////////
+
 void clearScreen();
 void printTitle();
 void printCard(int numberAmount, int* number, char* face);
 void solveCardFace(wchar_t *cardFaceVariable, char face);
 void solveCardNumber(char *dest, int num);
 
+////////   Constant Variables   ////////
+
+const char *menuOptions[] = {
+    "Start Game",
+    "Settings",
+    "Exit"
+};
+const int menuSize = sizeof(menuOptions) / sizeof(menuOptions[0]);
+
+////////   Global Variables   ////////
+
+// Counting Variables
+int i, j, k, n;
+
+////////   Main Function   ////////
+
 int main() {
+    int currentSelection = 0;
+
     setlocale(LC_ALL, "");
 
-    clearScreen();
-    printTitle();
+    while (true) {
+        clearScreen();
+        printTitle();
+        
+        printf("\n\n\n");
+
+        printf("                               -----------------\n");
+        for (i = 0; i < menuSize; i++) {
+            printf("                           ");
+            if (i == currentSelection) {
+                printf("-> | %-15s |\n", menuOptions[i]);
+            } else {
+                printf("   | %-15s |\n", menuOptions[i]);
+            }
+        }
+        printf("                               -----------------\n");
+
+        getchar();
+    }
 
     printCard(5, (int[]){2, 3, 4, 5, 6}, (char[]){'S', 'H', 'D', 'C', 'S'});
     printCard(4, (int[]){7, 8, 9, 10}, (char[]){'H', 'D', 'C', 'S'});
@@ -30,7 +69,11 @@ int main() {
 
 
 
-//          Functions           //
+
+
+////////   Functions   ////////
+
+
 
 
 
@@ -49,18 +92,18 @@ void clearScreen() {
 void printTitle() {
 
 printf(
-"__| |____________________________________________________| |__\n"
-"__   ____________________________________________________   __\n"
-"  | |                                                    | |  \n"
-"  | | ____       _               _   _ _       _     _   | |  \n"
-"  | ||  _ \\ ___ | | _____ _ __  | \\ | (_) __ _| |__ | |_ | |  \n"
-"  | || |_) / _ \\| |/ / _ \\ '__| |  \\| | |/ _` | '_ \\| __|| |  \n"
-"  | ||  __/ (_) |   <  __/ |    | |\\  | | (_| | | | | |_ | |  \n"
-"  | ||_|   \\___/|_|\\_\\___|_|    |_| \\_|_|\\__, |_| |_|\\__|| |  \n"
-"  | |                                    |___/           | |  \n"
-"__| |____________________________________________________| |__\n"
-"__   ____________________________________________________   __\n"
-"  | |                                                    | |  \n"
+"          __| |____________________________________________________| |__\n"
+"          __   ____________________________________________________   __\n"
+"            | |                                                    | |  \n"
+"            | | ____       _               _   _ _       _     _   | |  \n"
+"            | ||  _ \\ ___ | | _____ _ __  | \\ | (_) __ _| |__ | |_ | |  \n"
+"            | || |_) / _ \\| |/ / _ \\ '__| |  \\| | |/ _` | '_ \\| __|| |  \n"
+"            | ||  __/ (_) |   <  __/ |    | |\\  | | (_| | | | | |_ | |  \n"
+"            | ||_|   \\___/|_|\\_\\___|_|    |_| \\_|_|\\__, |_| |_|\\__|| |  \n"
+"            | |                                    |___/           | |  \n"
+"          __| |____________________________________________________| |__\n"
+"          __   ____________________________________________________   __\n"
+"            | |                                                    | |  \n"
   );
 
 }
@@ -70,7 +113,7 @@ void printCard(int numberAmount, int* number, char* face) {
         printf("Amount of card(s) exceed limit, only up to 5 were allowed.");
         return;
     }
-    int i;
+
     wchar_t card[3];
     
     for (i = 0; i < numberAmount; i++) {
