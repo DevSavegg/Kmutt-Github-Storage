@@ -6,9 +6,13 @@
 #include <wchar.h>
 #include <locale.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 ////////   Declare Functions   ////////
 
+char getch();
+int detect_arrow_key();
 void clearScreen();
 void printTitle();
 void printCard(int numberAmount, int* number, char* face);
@@ -33,10 +37,11 @@ int i, j, k, n;
 
 int main() {
     int currentSelection = 0;
+    bool isSelected = false;
 
     setlocale(LC_ALL, "");
 
-    while (true) {
+    while (!isSelected) {
         clearScreen();
         printTitle();
         
@@ -53,7 +58,37 @@ int main() {
         }
         printf("                               -----------------\n");
 
-        getchar();
+        switch (detect_arrow_key())
+        {
+        case 0:
+            currentSelection--;
+            if (currentSelection < 0) {
+                currentSelection = menuSize - 1;
+            }
+            break;
+        case 1:
+            currentSelection++;
+            if (currentSelection > menuSize - 1) {
+                currentSelection = 0;
+            }
+            break;
+        case 2:
+            printf("Fuck you\n");
+            isSelected = true;
+            break ; 
+        default:
+            break;
+        }
+    }
+
+    switch (currentSelection)
+    {
+    case 2:
+        clearScreen();
+        return 0;
+    
+    default:
+        break;
     }
 
     printCard(5, (int[]){2, 3, 4, 5, 6}, (char[]){'S', 'H', 'D', 'C', 'S'});
@@ -61,6 +96,8 @@ int main() {
     printCard(3, (int[]){1, 11, 12}, (char[]){'D', 'C', 'S'});
     printCard(2, (int[]){13, 1}, (char[]){'C', 'S'});
     printCard(1, (int[]){2}, (char[]){'X'});
+
+    return 0;
 }
 
 
@@ -80,6 +117,47 @@ int main() {
 
 
 
+
+char getch() {
+    char ch;
+    struct termios oldt, newt;
+
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    ch = getchar();
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+    return ch;
+}
+
+int detect_arrow_key() {
+    char ch = getch();
+
+    if (ch == '\n' || ch == '\r') {
+        return 2;
+    } else if (ch == '\x1b') {
+        ch = getch();
+        if (ch == '[') {
+            ch = getch();
+            switch (ch)
+            {
+            case 'A':
+                return 0;
+            case 'B':
+                return 1;
+            default:
+                return -1;
+            }
+        }
+    }
+
+    return -1;
+}
 
 void clearScreen() {
     #ifdef _WIN32
