@@ -1,6 +1,7 @@
 {
     "python.analysis.typeCheckingMode": "basic",
     "files.associations": {
-        "locale.h": "c"
+        "locale.h": "c",
+        "stdbool.h": "c"
     }
 }

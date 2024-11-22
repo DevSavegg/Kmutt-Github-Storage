@@ -10,6 +10,34 @@
 #include <unistd.h>
 #include <ctype.h>
 
+////////   Struct Variables   ////////
+
+typedef struct 
+{
+    int StartingMoney;
+    int MaxPlayer;
+    int TimeoutInterval;
+} Settings;
+typedef struct
+{
+    int Number;
+    char Face;
+} Card;
+typedef struct
+{
+    int CurrentMoney;
+    int PlayerPosition;
+    int SpecialRole;
+    Card currentCard[];
+} Person;
+
+typedef struct
+{
+    int PoolMoney;
+    int currentPlayerIndex;
+    Card centralCard[];
+} System;
+
 ////////   Declare Functions   ////////
 
 // Input Related
@@ -22,6 +50,7 @@ void clearScreen();
 
 void printTitle();
 void printSettings();
+int displayChoices(const char *choices[], int choicesSize, int spaceCount, int lineCount, bool isVertical, void (*titleFunc)(void), char *extraText);
 
 void printCard(int numberAmount, int* number, char* face);
 
@@ -29,11 +58,18 @@ void printCard(int numberAmount, int* number, char* face);
 void solveCardFace(wchar_t *cardFaceVariable, char face);
 void solveCardNumber(char *dest, int num);
 
+// Setting Related
+void saveSettings(Settings *settings);
+void loadSettings(Settings *settings);
+
 ////////   Constant Variables   ////////
+
+const char *settingsFileName = "PokerNight-Settings.dat";
 
 const char *currency = "$";
 
 const char *maxPlayerText = "8 Players";
+const char *timeoutIntervalText = "15 Seconds";
 const char *maxInitialMoneyText = "1M";
 
 const char *cardRanks[] = {
@@ -64,92 +100,31 @@ const char *settingOptions[] = {
 };
 const int settingSize = sizeof(settingOptions) / sizeof(settingOptions[0]);
 
-////////   Struct Variables   ////////
-
-typedef struct 
-{
-    int StartingMoney;
-    int MaxPlayer;
-    int TimeoutInterval;
-} Settings;
-typedef struct
-{
-    int Number;
-    char Face;
-} Card;
-typedef struct
-{
-    int CurrentMoney;
-    int PlayerPosition;
-    int SpecialRole;
-    Card currentCard[];
-} Person;
-
-typedef struct
-{
-    int PoolMoney;
-    int currentPlayerIndex;
-    Card centralCard[];
-} System;
-
 ////////   Global Variables   ////////
 
 // Counting Variables
 int i, j, k, n;
 int previousDealer;
 
+////////   Main Game Variables   ////////
+
+Settings currentSettings;
+
 ////////   Main Function   ////////
 
 int main() {
-    int TITLE_currentSelection, SETTING_currentSelection;
-    bool TITLE_isSelected, SETTING_isSelected;
+    int result, tmp;
+
+    char str[200], *final;
 
     setlocale(LC_ALL, "");
 
+    goto title;
+
 title:
-    TITLE_isSelected = false;
-    TITLE_currentSelection = 0;
-
-    while (!TITLE_isSelected) {
-        clearScreen();
-        printTitle();
-        
-        printf("\n\n\n");
-
-        printf("                                   -----------------\n");
-        for (i = 0; i < menuSize; i++) {
-            printf("                               ");
-            if (i == TITLE_currentSelection) {
-                printf("-> | %-15s |\n", menuOptions[i]);
-            } else {
-                printf("   | %-15s |\n", menuOptions[i]);
-            }
-        }
-        printf("                                   -----------------\n");
-
-        switch (detect_arrow_key())
-        {
-        case 0:
-            TITLE_currentSelection--;
-            if (TITLE_currentSelection < 0) {
-                TITLE_currentSelection = menuSize - 1;
-            }
-            break;
-        case 1:
-            TITLE_currentSelection++;
-            if (TITLE_currentSelection > menuSize - 1) {
-                TITLE_currentSelection = 0;
-            }
-            break;
-        case 2:
-            TITLE_isSelected = true;
-            break ; 
-        default:
-            break;
-        }
-    }
-
-    switch (TITLE_currentSelection)
+    result = displayChoices(menuOptions, menuSize, 28, 22, true, printTitle, NULL);
+    
+    switch (result)
     {
     case 0:
         goto startGame;
@@ -175,56 +150,55 @@ exit:
     return 0;
 
 settings:
-    SETTING_isSelected = false;
-    SETTING_currentSelection = 0;
+    loadSettings(&currentSettings);
 
-    while (!SETTING_isSelected) {
-        clearScreen();
-        printSettings();
+    result = displayChoices(settingOptions, settingSize, 21, 22, true, printSettings, NULL);
 
-        printf("\n\n\n");
-
-        printf("                           -------------------\n");
-        for (i = 0; i < settingSize; i++) {
-            printf("                       ");
-            if (i == SETTING_currentSelection) {
-                printf("-> | %-17s |\n", settingOptions[i]);
-            } else {
-                printf("   | %-17s |\n", settingOptions[i]);
-            }
-        }
-        printf("                           -------------------\n");
-
-        switch (detect_arrow_key())
-        {
-        case 0:
-            SETTING_currentSelection--;
-            if (SETTING_currentSelection < 0) {
-                SETTING_currentSelection = settingSize - 1;
-            }
-            break;
-        case 1:
-            SETTING_currentSelection++;
-            if (SETTING_currentSelection > settingSize - 1) {
-                SETTING_currentSelection = 0;
-            }
-            break;
-        case 2:
-            SETTING_isSelected = true;
-            break ; 
-        default:
-            goto error;
-            break;
-        }
-    }
-
-    switch (SETTING_currentSelection)
+    switch (result)
     {
     case 0:
+        final = "                           Current: %d\n                           Maximum: %s";
+        sprintf(str, final, currentSettings.MaxPlayer, maxPlayerText);
+
+        result = displayChoices(
+            (const char*[]){
+                "Modify Settings",
+                "Reset to Default",
+                "< Back >"
+            },
+            3,
+            21,
+            22,
+            true,
+            printSettings,
+            str
+        );
+
+        switch (result)
+        {
+            case 0:
+                printf("Type the value: ");
+                scanf("%d", &tmp);
+                if (tmp < 1 || tmp > 8) {
+                    tmp = 4;
+                }
+                getchar();
+                currentSettings.MaxPlayer = tmp;
+                break;
+            case 1:
+                currentSettings.MaxPlayer = 4;
+                break;
+            default:
+                break;
+        }
+        saveSettings(&currentSettings);
+        goto settings;
         break;
     case 1:
+        goto settings;
         break;
     case 2:
+        goto settings;
         break;
     case 3:
         goto title;
@@ -236,6 +210,8 @@ settings:
 startGame:
     clearScreen();
     printTitle();
+
+    loadSettings(&currentSettings);
 
     printCard(5, (int[]){2, 3, 4, 5, 6}, (char[]){'S', 'H', 'D', 'C', 'S'});
     printCard(4, (int[]){7, 8, 9, 10}, (char[]){'H', 'D', 'C', 'S'});
@@ -287,11 +263,20 @@ int is_key_pressed(char target) {
     return toupper(ch) == toupper(target);
 }
 
+/*
+Up - 0
+Down - 1
+Left - 2
+Right - 3
+
+Enter - 99
+Not Defined - -1
+*/
 int detect_arrow_key() {
     char ch = getch();
 
     if (ch == '\n' || ch == '\r') {
-        return 2;
+        return 99;
     } else if (ch == '\x1b') {
         ch = getch();
         if (ch == '[') {
@@ -302,6 +287,10 @@ int detect_arrow_key() {
                 return 0;
             case 'B':
                 return 1;
+            case 'C':
+                return 3;
+            case 'D':
+                return 2;
             default:
                 return -1;
             }
@@ -355,17 +344,17 @@ void printSettings() {
 
 /*
 
-┌─────────────┐    
-│X            │    
-│             │    
-│             │    
-│             │    
-│      X      │    
-│             │    
-│             │    
-│             │    
-│            X│    
-└─────────────┘
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    
+│X            │    │A            │    │A            │    │A            │    │A            │    
+│             │    │             │    │             │    │             │    │             │    
+│             │    │             │    │             │    │             │    │             │    
+│             │    │             │    │             │    │             │    │             │    
+│      X      │    │      ♠      │    │      ♥      │    │      ♦      │    │      ♣      │    
+│             │    │             │    │             │    │             │    │             │    
+│             │    │             │    │             │    │             │    │             │    
+│             │    │             │    │             │    │             │    │             │    
+│            X│    │            A│    │            A│    │            A│    │            A│    
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘    
 
 */
 
@@ -441,6 +430,98 @@ void printCard(int numberAmount, int* number, char* face) {
     printf("\n");
 }
 
+int displayChoices(const char *choices[], int choicesSize, int spaceCount, int lineCount, bool isVertical, void (*titleFunc)(void), char *extraText) {
+    int currentSelection = 0;
+    bool isSelected = false;
+
+    while (!isSelected) {
+        clearScreen();
+        
+        if (titleFunc) {
+            titleFunc();
+        }
+
+        printf("\n\n\n");
+
+        if (extraText) {
+            printf("%s\n\n\n", extraText);
+        }
+
+        for (i = 0; i < spaceCount + 4; i++) {
+            printf(" ");
+        }
+        for (i = 0; i < lineCount; i++) {
+            printf("-");
+        }
+        printf("\n");
+
+        for (i = 0; i < choicesSize; i++) {
+            for (j = 0; j < spaceCount; j++) {
+                printf(" ");
+            }
+            if (i == currentSelection) {
+                printf("-> | %-20s |\n", choices[i]);
+            } else {
+                printf("   | %-20s |\n", choices[i]);
+            }
+        }
+
+        for (i = 0; i < spaceCount + 4; i++) {
+            printf(" ");
+        }
+        for (i = 0; i < lineCount; i++) {
+            printf("-");
+        }
+        printf("\n");
+
+        if (isVertical) {
+            switch (detect_arrow_key())
+            {
+            case 0:
+                currentSelection--;
+                if (currentSelection < 0) {
+                    currentSelection = choicesSize - 1;
+                }
+                break;
+            case 1:
+                currentSelection++;
+                if (currentSelection > choicesSize - 1) {
+                    currentSelection = 0;
+                }
+                break;
+            case 99:
+                isSelected = true;
+                break;
+            default:
+                break;
+            }
+        } else {
+            switch (detect_arrow_key())
+            {
+            case 2:
+                currentSelection--;
+                if (currentSelection < 0) {
+                    currentSelection = choicesSize - 1;
+                }
+                break;
+            case 3:
+                currentSelection++;
+                if (currentSelection > choicesSize - 1) {
+                    currentSelection = 0;
+                }
+                break;
+            case 99:
+                isSelected = true;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    return currentSelection;
+}
+
 void solveCardNumber(char *dest, int num) {
     char cardNum[4];
      if (num == 11) {
@@ -482,4 +563,36 @@ void solveCardFace(wchar_t *cardFaceVariable, char face) {
         printf("Card character not found, (S [Spades], H [Hearts], D [Diamonds], C [Clover], X [Conceal]) expected.");
         return;
     }
+}
+
+void saveSettings(Settings *settings) {
+    FILE *file = fopen(settingsFileName, "wb");
+    if (file == NULL) {
+        perror("Error encountered while trying to save the settings file.");
+        return;
+    }
+
+    fwrite(settings, sizeof(Settings), 1, file);
+    fclose(file);
+
+    return;
+}
+
+void loadSettings(Settings *settings) {
+    FILE *file = fopen(settingsFileName, "rb");
+
+    if (file == NULL) {
+        printf("Settings file not found, creating a new one using default settings.");
+        settings->MaxPlayer = 4;
+        settings->StartingMoney = 10000;
+        settings->TimeoutInterval = 20;
+        saveSettings(settings);
+
+        return;
+    }
+
+    fread(settings, sizeof(Settings), 1, file);
+    fclose(file);
+
+    return;
 }
