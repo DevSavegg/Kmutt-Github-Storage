@@ -2,6 +2,10 @@
     "python.analysis.typeCheckingMode": "basic",
     "files.associations": {
         "locale.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "*.tcc": "cpp",
+        "unordered_map": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp"
     }
 }
