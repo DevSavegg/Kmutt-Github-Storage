@@ -1,26 +1,63 @@
+/* ##################################################################### */
+/* # _  __               _         _    ___     ____       _           # */
+/* #| |/ /_ __ _   _ ___| | ____ _| |  ( _ )   |  _ \ _ __(_)_ __ ___  # */
+/* #| ' /| '__| | | / __| |/ / _` | |  / _ \/\ | |_) | '__| | '_ ` _ \ # */
+/* #| . \| |  | |_| \__ \   < (_| | | | (_>  < |  __/| |  | | | | | | |# */
+/* #|_|\_\_|   \__,_|___/_|\_\__,_|_|  \___/\/ |_|   |_|  |_|_| |_| |_|# */
+/* ##################################################################### */
+
 #include <iostream>
 #include <cstdlib>
+#include <climits>
+#include <queue>
+#include <tuple>
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include <unordered_map>
 #include <utility>
 
 using namespace std;
 
-/// Type Definition ///
-typedef pair<int, float> iPairs;
 
-/// Class Declaration ///
+
+/* ###################################################################### */
+/* # _____                   ____        __ _       _ _   _             # */
+/* #|_   _|   _ _ __   ___  |  _ \  ___ / _(_)_ __ (_) |_(_) ___  _ __  # */
+/* #  | || | | | '_ \ / _ \ | | | |/ _ \ |_| | '_ \| | __| |/ _ \| '_ \ # */
+/* #  | || |_| | |_) |  __/ | |_| |  __/  _| | | | | | |_| | (_) | | | |# */
+/* #  |_| \__, | .__/ \___| |____/ \___|_| |_|_| |_|_|\__|_|\___/|_| |_|# */
+/* #      |___/|_|                                                      # */
+/* ###################################################################### */
+
+typedef pair<int, float> iPairs;
+typedef tuple<int, int, float> prim_edge;
+
+
+
+/* ############################################################################### */
+/* #  ____ _                 ____            _                 _   _             # */
+/* # / ___| | __ _ ___ ___  |  _ \  ___  ___| | __ _ _ __ __ _| |_(_) ___  _ __  # */
+/* #| |   | |/ _` / __/ __| | | | |/ _ \/ __| |/ _` | '__/ _` | __| |/ _ \| '_ \ # */
+/* #| |___| | (_| \__ \__ \ | |_| |  __/ (__| | (_| | | | (_| | |_| | (_) | | | |# */
+/* # \____|_|\__,_|___/___/ |____/ \___|\___|_|\__,_|_|  \__,_|\__|_|\___/|_| |_|# */
+/* ############################################################################### */
+
 class Node {
 public:
     // Properties //
     int id; // Node ID
     string nodeLabel; // Label/Name
     vector<iPairs> edges; // All connected nodes <Destination (ID), weight>
+    bool visited = false; // For Prim's Algorithm
 
     // Constructor //
     Node(int id, string label = "") : id(id), nodeLabel(label) {}
+
+    bool operator==(const Node& otherNode) const {
+        return this->id == otherNode.id;
+    }
 
     // Method //
     void addEdge(int destination, float weight);
@@ -56,16 +93,44 @@ public:
     void addEdge(int sourceID, int destinationID, float weight);
     void removeEdge(int sourceID, int destinationID);
 
+    bool isDirected();
     bool hasCycle(); // Using Union-Find Data Structure to detect the cycle in the graph
+    
+    int getSize();
     void displayGraph() const;
 
-    int getSize();
+    const Node& getNode(int id);
+    const unordered_map<int, Node>& getNodes();
 };
 
-/// Main Function ///
+
+
+/* ##################################################################### */
+/* # ____  _        _   _       __     __         _       _     _      # */
+/* #/ ___|| |_ __ _| |_(_) ___  \ \   / /_ _ _ __(_) __ _| |__ | | ___ # */
+/* #\___ \| __/ _` | __| |/ __|  \ \ / / _` | '__| |/ _` | '_ \| |/ _ \# */
+/* # ___) | || (_| | |_| | (__    \ V / (_| | |  | | (_| | |_) | |  __/# */
+/* #|____/ \__\__,_|\__|_|\___|    \_/ \__,_|_|  |_|\__,_|_.__/|_|\___|# */
+/* ##################################################################### */
+
+static Node NULL_NODE(-1, "NULL");
+
+
+
+/* ################################################################## */
+/* # __  __       _         _____                 _   _             # */
+/* #|  \/  | __ _(_)_ __   |  ___|   _ _ __   ___| |_(_) ___  _ __  # */
+/* #| |\/| |/ _` | | '_ \  | |_ | | | | '_ \ / __| __| |/ _ \| '_ \ # */
+/* #| |  | | (_| | | | | | |  _|| |_| | | | | (__| |_| | (_) | | | |# */
+/* #|_|  |_|\__,_|_|_| |_| |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|# */
+/* ################################################################## */
 
 int main() {
+
+    //-------------- Graph Setup --------------//
+
     int startIndex;
+    int startNodeID;
     int directed;
 
     cout << "Directed Graph? (1 = true, 0 = false)" << endl;
@@ -78,6 +143,8 @@ int main() {
     }
 
     Graph g(directed == 1 ? true : false);
+
+    //-------------- Node/Edge Input --------------//
 
     cout << "+-----------------------------+" << endl;
     cout << "|          Add Nodes          |" << endl;
@@ -127,20 +194,140 @@ int main() {
         
         cout << "Added edge " << source << " <-> " << destination << " [weight: " << weight << "]" << endl;
     }
-    cout << "\n\n\n";
 
-    g.displayGraph();
+    cout << endl;
+    cout << "Input Starting Node ID for algorithm (Prim's and Kruskal's) : ";
+    cin >> startNodeID;
 
-    if (g.hasCycle()) {
-        cout << "Graph has a cycle." << endl;
-    } else {
-        cout << "Graph does not have a cycle." << endl;
+    cout << endl << endl << endl;
+
+    //-------------- Prim's Algorithm --------------//
+
+    Graph prim_mst(true);
+
+    unordered_set<int> visited;
+
+    // Priority Queue need a custom function to sort all weights since iPairs structure is <destination, weight>
+    priority_queue<prim_edge, vector<prim_edge>, function<bool(const prim_edge&, const prim_edge&)>> minHeap
+    (
+        [](const prim_edge& a, const prim_edge& b) {
+            float weightA = get<2>(a), weightB = get<2>(b);
+            int destA = get<1>(a), destB = get<1>(b);
+            return (weightA == weightB) ? (destA > destB) : (weightA > weightB);
+        }
+    );
+
+    float totalCost = 0.0;
+
+    cout << "+-----------------------------+" << endl;
+    cout << "|      Prim's Algorithm       |" << endl;
+    cout << "+-----------------------------+\n" << endl;
+
+    Node startNode = g.getNode(startNodeID);
+
+    if (startNode == NULL_NODE) {
+        cout << "Node {" << startNodeID << "} not found, abort." << endl;
+        return 1;
     }
+
+    prim_mst.addNode(startNode.id, startNode.nodeLabel);
+    visited.insert(startNodeID);
+
+    for (const auto& edge : startNode.getEdges()) {
+        minHeap.push({startNodeID, edge.first, edge.second}); // <Source, Destination, Weight>
+    }
+
+    // Loop until all edges is evaluated
+    while (!minHeap.empty()) {
+        auto [source, dest, weight] = minHeap.top();
+        minHeap.pop();
+
+        // If node is visited, skip
+        if (visited.count(dest)) {
+            continue;
+        }
+
+        // Insert current node to visited list
+        visited.insert(dest);
+
+        // Get the current node object; 
+        const Node& currentNode = g.getNode(dest);
+        prim_mst.addNode(currentNode.id, currentNode.nodeLabel);
+
+        prim_mst.addEdge(source, dest, weight);
+
+        totalCost += weight;
+
+        for (const auto& edge : currentNode.getEdges()) {
+            if (!visited.count(edge.first)) { // Prevent cycle
+                minHeap.push({currentNode.id, edge.first, edge.second});
+            }
+        }
+    }
+
+    // Represent Prim's Algorithm Minimum Spanning Tree
+    prim_mst.displayGraph();
+
+    cout << "------------------------------" << endl;
+    cout << "Total Weight : " << totalCost;
+    cout << endl << endl << endl;
+
+    //-------------- Kruskal's Algorithm --------------//
+
+    Graph kruskal_mst(true);
+    int n = 0;
+    float kruskal_cost = 0.0;
+
+    priority_queue<prim_edge, vector<prim_edge>, function<bool(const prim_edge&, const prim_edge&)>> sortedEdges
+    (
+        [](const prim_edge& a, const prim_edge& b) {
+            return get<2>(a) > get<2>(b);
+        }
+    );
+
+    cout << "+-----------------------------+" << endl;
+    cout << "|    Kruskal's Algorithm      |" << endl;
+    cout << "+-----------------------------+\n" << endl;
+
+    for (auto [id, node] : g.getNodes()) {
+        for (auto edge : node.getEdges()) {
+            sortedEdges.push({id, edge.first, edge.second});
+            n++;
+        }
+        kruskal_mst.addNode(node.id, node.nodeLabel);
+    }
+
+    for (int i = 0; i < n; i++) {
+        auto [source, dest, weight] = sortedEdges.top();
+        sortedEdges.pop();
+
+        kruskal_mst.addEdge(source, dest, weight);
+
+        if (kruskal_mst.hasCycle()) {
+            kruskal_mst.removeEdge(source, dest);
+        } else {
+            kruskal_cost += weight;
+        }
+    }
+
+    kruskal_mst.displayGraph();
+
+    cout << "------------------------------" << endl;
+    cout << "Total Weight : " << kruskal_cost;
+    cout << endl << endl << endl;
 
     return EXIT_SUCCESS;
 }
 
-/// Method Definition ///
+
+
+/* ################################################################################## */
+/* # __  __      _   _               _   ____        __ _       _ _   _             # */
+/* #|  \/  | ___| |_| |__   ___   __| | |  _ \  ___ / _(_)_ __ (_) |_(_) ___  _ __  # */
+/* #| |\/| |/ _ \ __| '_ \ / _ \ / _` | | | | |/ _ \ |_| | '_ \| | __| |/ _ \| '_ \ # */
+/* #| |  | |  __/ |_| | | | (_) | (_| | | |_| |  __/  _| | | | | | |_| | (_) | | | |# */
+/* #|_|  |_|\___|\__|_| |_|\___/ \__,_| |____/ \___|_| |_|_| |_|_|\__|_|\___/|_| |_|# */
+/* ################################################################################## */
 
 //------------------- Node -------------------//
 void Node::addEdge(int destination, float weight) {
@@ -258,6 +445,10 @@ bool Graph::hasCycle() {
     return false; // No cycle detected
 }
 
+bool Graph::isDirected() {
+    return directed;
+}
+
 void Graph::displayGraph() const {
     for (const auto& [id, node] : nodes) {
         std::cout << "Node " << id << " (" << node.nodeLabel << "):\n";
@@ -270,4 +461,16 @@ void Graph::displayGraph() const {
 
 int Graph::getSize() {
     return nodes.size();
+}
+
+const Node& Graph::getNode(int id) {
+    if (nodes.find(id) != nodes.end()) {
+        return nodes.at(id);
+    }
+
+    return NULL_NODE;
+}
+
+const unordered_map<int, Node>& Graph::getNodes() {
+    return nodes;
 }
